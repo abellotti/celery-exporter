@@ -1,6 +1,7 @@
 # pylint: disable=protected-access,,attribute-defined-outside-init
 import re
 import sys
+import time
 
 from celery import Celery
 from loguru import logger
@@ -155,6 +156,7 @@ class Exporter:
         logger.add(sys.stdout, level=click_params["log_level"])
         self.app = Celery(broker=click_params["broker_url"])
         self.state = self.app.events.State()
+        self.retry_interval = 5
 
         handlers = {
             "worker-heartbeat": self.track_worker_heartbeat,
@@ -166,8 +168,23 @@ class Exporter:
 
         with self.app.connection() as connection:
             start_http_server(self.registry, connection, click_params["port"])
-            recv = self.app.events.Receiver(connection, handlers=handlers)
-            recv.capture(limit=None, timeout=None, wakeup=True)
+            while True:
+                try:
+                    recv = self.app.events.Receiver(connection, handlers=handlers)
+                    recv.capture(limit=None, timeout=None, wakeup=True)
+
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+
+                except Exception as e:
+                    logger.error(
+                        "celery-exporter exception '{}', retrying in {} seconds.",
+                        str(e),
+                        self.retry_interval,
+                    )
+                    pass
+
+                time.sleep(self.retry_interval)
 
 
 exception_pattern = re.compile(r"^(\w+)\(")
