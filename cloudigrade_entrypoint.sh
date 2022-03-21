@@ -30,5 +30,6 @@ if [ -n "${CELERY_METRICS_LOG_LEVEL}" ]; then
   LOG_LEVEL="${CELERY_METRICS_LOG_LEVEL}"
 fi
 
+echo "Starting celery-exporter on port=${METRICS_PORT} for broker=redis://${REDIS_HOST}:${REDIS_PORT} ..."
 python /app/cli.py --port ${METRICS_PORT} --broker-url "${REDIS_URL}" --log-level "${LOG_LEVEL}"
 
