@@ -1,4 +1,5 @@
 # pylint: disable=protected-access,,attribute-defined-outside-init
+import os
 import re
 import sys
 import time
@@ -155,6 +156,14 @@ class Exporter:
         logger.remove()
         logger.add(sys.stdout, level=click_params["log_level"])
         self.app = Celery(broker=click_params["broker_url"])
+
+        config_file = os.getenv("CELERY_EXPORTER_CONFIG_FILE", None)
+        if config_file is not None:
+            conf = {}
+            with open(config_file) as fp:
+                exec(compile(fp.read(), config_file, 'exec'), {}, conf)
+            self.app.config_from_object(conf)
+
         self.state = self.app.events.State()
         self.retry_interval = 5
 
