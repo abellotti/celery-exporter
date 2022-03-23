@@ -30,9 +30,12 @@ if [ -n "${CELERY_METRICS_LOG_LEVEL}" ]; then
   LOG_LEVEL="${CELERY_METRICS_LOG_LEVEL}"
 fi
 
+RETRY_INTERVAL=5
+
 echo "Starting celery-exporter ..."
 echo "  port:                    ${METRICS_PORT}"
 echo "  broker-url:              redis://${REDIS_HOST}:${REDIS_PORT}"
+echo "  retry-interval:          ${RETRY_INTERVAL}"
 echo "  log-level:               ${LOG_LEVEL}"
 
 BROKER_TRANSPORT_OPTIONS=""
@@ -42,5 +45,5 @@ if [ -n "${CLOUDIGRADE_ENVIRONMENT}" ]; then
   BROKER_TRANSPORT_OPTIONS="--broker-transport-option ${BROKER_TRANSPORT_OPTION}"
 fi
 
-python /app/cli.py --port ${METRICS_PORT} --broker-url "${REDIS_URL}" --log-level "${LOG_LEVEL}" ${BROKER_TRANSPORT_OPTIONS}
+python /app/cli.py --port ${METRICS_PORT} --broker-url "${REDIS_URL}" --retry-interval ${RETRY_INTERVAL} --log-level "${LOG_LEVEL}" ${BROKER_TRANSPORT_OPTIONS}
 

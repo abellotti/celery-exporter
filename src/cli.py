@@ -26,6 +26,12 @@ default_buckets_str = ",".join(map(str, Histogram.DEFAULT_BUCKETS))
     help="Celery broker transport option, e.g visibility_timeout=18000",
 )
 @click.option(
+    "--retry-interval",
+    required=False,
+    default=0,
+    help="Broker error retry interval in seconds, default is 0 for no retry",
+)
+@click.option(
     "--port",
     type=int,
     default=9808,
@@ -43,7 +49,7 @@ default_buckets_str = ",".join(map(str, Histogram.DEFAULT_BUCKETS))
     default="INFO",
     show_default=True,
 )
-def cli(broker_url, broker_transport_option, port, buckets, log_level):  # pylint: disable=unused-argument
+def cli(broker_url, broker_transport_option, retry_interval, port, buckets, log_level):  # pylint: disable=unused-argument
     formatted_buckets = list(map(float, buckets.split(",")))
     ctx = click.get_current_context()
     Exporter(formatted_buckets).run(ctx.params)

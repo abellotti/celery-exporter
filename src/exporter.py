@@ -170,7 +170,7 @@ class Exporter:
             self.app.conf["broker_transport_options"] = transport_options
 
         self.state = self.app.events.State()
-        self.retry_interval = 5
+        self.retry_interval = click_params["retry_interval"]
 
         handlers = {
             "worker-heartbeat": self.track_worker_heartbeat,
@@ -196,6 +196,8 @@ class Exporter:
                         str(e),
                         self.retry_interval,
                     )
+                    if self.retry_interval == 0:
+                        raise e
                     pass
 
                 time.sleep(self.retry_interval)
