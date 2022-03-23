@@ -31,22 +31,16 @@ if [ -n "${CELERY_METRICS_LOG_LEVEL}" ]; then
 fi
 
 echo "Starting celery-exporter ..."
-echo "  port:       ${METRICS_PORT}"
-echo "  broker-url: redis://${REDIS_HOST}:${REDIS_PORT}"
-echo "  log-level:  ${LOG_LEVEL}"
+echo "  port:                    ${METRICS_PORT}"
+echo "  broker-url:              redis://${REDIS_HOST}:${REDIS_PORT}"
+echo "  log-level:               ${LOG_LEVEL}"
 
+BROKER_TRANSPORT_OPTIONS=""
 if [ -n "${CLOUDIGRADE_ENVIRONMENT}" ]; then
-  export CELERY_EXPORTER_CONFIG_FILE="/var/tmp/celery_exporter_cloudigrade_config.py"
-  echo ""
-  echo "CLOUDIGRADE_ENVIRONMENT:     ${CLOUDIGRADE_ENVIRONMENT}"
-  echo "CELERY_EXPORTER_CONFIG_FILE: ${CELERY_EXPORTER_CONFIG_FILE}"
-
-  cat - <<!END! > ${CELERY_EXPORTER_CONFIG_FILE}
-broker_transport_options = {
-    "global_keyprefix": "${CLOUDIGRADE_ENVIRONMENT}-",
-}
-!END!
+  BROKER_TRANSPORT_OPTION="global_keyprefix=${CLOUDIGRADE_ENVIRONMENT}-"
+  echo "  broker-transport-option: ${BROKER_TRANSPORT_OPTION}"
+  BROKER_TRANSPORT_OPTIONS="--broker-transport-option ${BROKER_TRANSPORT_OPTION}"
 fi
 
-python /app/cli.py --port ${METRICS_PORT} --broker-url "${REDIS_URL}" --log-level "${LOG_LEVEL}"
+python /app/cli.py --port ${METRICS_PORT} --broker-url "${REDIS_URL}" --log-level "${LOG_LEVEL}" ${BROKER_TRANSPORT_OPTIONS}
 

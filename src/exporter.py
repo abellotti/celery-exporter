@@ -156,13 +156,18 @@ class Exporter:
         logger.remove()
         logger.add(sys.stdout, level=click_params["log_level"])
         self.app = Celery(broker=click_params["broker_url"])
+        transport_options = {}
+        for transport_option in click_params["broker_transport_option"]:
+            if transport_option is not None:
+                option, value = transport_option.split('=',1)
+                if option is not None:
+                    if value.isnumeric():
+                        transport_options[option] = int(value)
+                    else:
+                        transport_options[option] = value
 
-        config_file = os.getenv("CELERY_EXPORTER_CONFIG_FILE", None)
-        if config_file is not None:
-            conf = {}
-            with open(config_file) as fp:
-                exec(compile(fp.read(), config_file, 'exec'), {}, conf)
-            self.app.config_from_object(conf)
+        if transport_options is not None:
+            self.app.conf["broker_transport_options"] = transport_options
 
         self.state = self.app.events.State()
         self.retry_interval = 5
