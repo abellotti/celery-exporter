@@ -30,7 +30,10 @@ if [ -n "${CELERY_METRICS_LOG_LEVEL}" ]; then
   LOG_LEVEL="${CELERY_METRICS_LOG_LEVEL}"
 fi
 
-RETRY_INTERVAL=5
+RETRY_INTERVAL=1
+if [ -n "${CELERY_METRICS_RETRY_INTERVAL}" ]; then
+  RETRY_INTERVAL=${CELERY_METRICS_RETRY_INTERVAL}
+fi
 
 echo "Starting celery-exporter ..."
 echo "  port:                    ${METRICS_PORT}"
