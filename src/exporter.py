@@ -18,6 +18,7 @@ class Exporter:  # pylint: disable=too-many-instance-attributes,too-many-branche
     def __init__(self, buckets=None):
         self.registry = CollectorRegistry(auto_describe=True)
         self.queue_cache = set()
+        self.broker_transport_options = {}
         self.state_counters = {
             "task-sent": Counter(
                 "celery_task_sent",
@@ -111,9 +112,21 @@ class Exporter:  # pylint: disable=too-many-instance-attributes,too-many-branche
         # request workers to response active queues
         # we need to cache queue info in exporter in case all workers are offline
         # so that no worker response to exporter will make active_queues return None
+        bto = {
+                "global_keyprefix": "aab-"
+        }
+        logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXX SOMEHOW THE broker_transport_options are:")
+        logger.info(self.broker_transport_options)
+        logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXX WE ARE USING:")
+        logger.info(bto)
+        self.app.conf["broker_transport_options"] = bto
         queues = self.app.control.inspect().active_queues() or {}
+        logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXX SOMEHOW THE app.conf are:")
+        logger.info(self.app.conf)
+
         for info_list in queues.values():
             for queue_info in info_list:
+                logger.info(queue_info)
                 self.queue_cache.add(queue_info["name"])
 
         with self.app.connection() as connection:
@@ -124,7 +137,7 @@ class Exporter:  # pylint: disable=too-many-instance-attributes,too-many-branche
                     )
                     length, consumer_count = ret.message_count, ret.consumer_count
                 except Exception as ex:  # pylint: disable=broad-except
-                    logger.exception(f"Queue {queue} declare failed: {str(ex)}")
+                    logger.info(f"Queue {queue} declare failed: {str(ex)}")
                     length = 0
                     consumer_count = 0
                 self.celery_queue_length.labels(queue_name=queue).set(length)
@@ -208,7 +221,8 @@ class Exporter:  # pylint: disable=too-many-instance-attributes,too-many-branche
                         transport_options[option] = value
 
         if transport_options is not None:
-            self.app.conf["broker_transport_options"] = transport_options
+            self.broker_transport_options = transport_options
+            self.app.conf["broker_transport_options"] = self.broker_transport_options
 
         ssl_options = {}
         for ssl_option in click_params["broker_ssl_option"]:
